@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "pysh"
+version = "0.1.0"
+description = "It's kinda like Bash but it's actually Python, and it is horrific and will cause permanent brain damage"
+authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
