@@ -1,10 +1,13 @@
 from abc import abstractmethod
 from copy import deepcopy
+from io import StringIO
 from typing import Optional, TextIO, cast
 import subprocess
 import sys
-from .stoppable_thread import StoppableThread
+import os
 from threading import current_thread
+
+from concussion.stoppable_thread import StoppableThread
 
 
 def threaded_write_out(buf: TextIO, output_to: TextIO) -> StoppableThread:
@@ -36,9 +39,9 @@ def threaded_write_out(buf: TextIO, output_to: TextIO) -> StoppableThread:
     return t
 
 
-class Pysh:
+class ConcussionBase:
     """
-    Pysh command component
+    Concussion command - abstract base class
     """
     def __init__(self) -> None:
         self._args: list[str] = []
@@ -47,7 +50,7 @@ class Pysh:
         operator.
         """
 
-        self._pipe_from: Optional['Pysh'] = None
+        self._pipe_from: Optional['ConcussionBase'] = None
         """
         Command to pipe input from
         """
@@ -65,7 +68,7 @@ class Pysh:
 
         self._stderr_thread: Optional[StoppableThread] = None
 
-    def clone(self) -> 'Pysh':
+    def clone(self) -> 'ConcussionBase':
         """
         Clone the command.
         """
@@ -94,7 +97,9 @@ class Pysh:
             t_stdout = threaded_write_out(stdout, sys.stdout)
 
         return_code = self.finish_exec()
-        # TODO: Set environment variable with return code
+
+        # Set environment variable with return code
+        os.environ["?"] = str(return_code)
 
         # Kill all our threads
         t_stderr.stop()
@@ -139,7 +144,7 @@ class Pysh:
         the execution to finish.
         """
 
-    def __add__(self, other: object) -> 'Pysh':
+    def __add__(self, other: object) -> 'ConcussionBase':
         """
         Add an argument to the command.
         """
@@ -161,7 +166,7 @@ class Pysh:
             # printing them instead of executing the command.
             raise TypeError("Expected a str or something")
 
-    def __lt__(self, other: object) -> 'Pysh':
+    def __lt__(self, other: object) -> 'ConcussionBase':
         """
         Add a file as input
         """
@@ -172,7 +177,7 @@ class Pysh:
         else:
             raise TypeError("Expected a str or something")
 
-    def __gt__(self, other: object) -> 'Pysh':
+    def __gt__(self, other: object) -> 'ConcussionBase':
         """
         Add a file as output
         """
@@ -183,12 +188,12 @@ class Pysh:
         else:
             raise TypeError("Expected a str or something")
 
-    def __or__(self, other: object) -> 'Pysh':
+    def __or__(self, other: object) -> 'ConcussionBase':
         """
         Pipe this to another command
         """
         if isinstance(other, str):
-            new_cmd = PyshExecute()
+            new_cmd = ConcussionExecutable()
             new_cmd._args.append(other)
             new_cmd._pipe_from = self
             return new_cmd
@@ -196,11 +201,11 @@ class Pysh:
             for i in other:
                 if not isinstance(i, str):
                     raise TypeError("Each element of iterable must be str")
-            new_cmd = PyshExecute()
+            new_cmd = ConcussionExecutable()
             new_cmd._args.extend(other)
             new_cmd._pipe_from = self
             return new_cmd
-        elif isinstance(other, Pysh):
+        elif isinstance(other, ConcussionBase):
             new_cmd = other.clone()
             new_cmd._pipe_from = self
             return new_cmd
@@ -208,7 +213,32 @@ class Pysh:
             raise TypeError("Give a str instead")
 
 
-class PyshExecute(Pysh):
+class ConcussionBuiltin(ConcussionBase):
+    """
+    Builtin shell function
+    """
+    def __init__(self) -> None:
+        super().__init__()
+        self._args.append(self.__class__.__name__)
+        self._exit_code = 0
+
+    @abstractmethod
+    def run(self, stdin: TextIO) -> tuple[str, str]:
+        """Run the command"""
+
+    def do_exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
+        try:
+            out, err = self.run(stdin)
+            return StringIO(out), StringIO(err)
+        except Exception as e:
+            self._exit_code = 1
+            return StringIO(), StringIO(str(e))
+
+    def do_finish_exec(self) -> int:
+        return self._exit_code
+
+
+class ConcussionExecutable(ConcussionBase):
     def __init__(self) -> None:
         super().__init__()
         self._process: Optional[subprocess.Popen] = None

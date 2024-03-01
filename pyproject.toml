@@ -1,14 +1,21 @@
 [tool.poetry]
-name = "pysh"
+name = "concussion"
 version = "0.1.0"
-description = "It's kinda like Bash but it's actually Python, and it is horrific and will cause permanent brain damage"
+description = "It's kinda like Bash except it causes severe brain damage because it's actually a Python REPL."
 authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
 license = "MIT"
 readme = "README.md"
 
+include = ["py.typed"]
+packages = [
+    { include = "concussion" }
+]
+
+[tool.poetry.scripts]
+flapi = "concussion.__main__:main"
+
 [tool.poetry.dependencies]
 python = "^3.11"
-
 
 [build-system]
 requires = ["poetry-core"]
