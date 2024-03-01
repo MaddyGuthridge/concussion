@@ -96,7 +96,7 @@ It's kinda like Bash except it causes severe brain damage because it's actually
 a Python REPL.
 ```
 
-## Unimplemented features
+## Known issues
 
 * Currently all stderr goes directly to this process's stderr, and it cannot be
   redirected. Maybe I'll implement this at some point.
@@ -104,3 +104,9 @@ a Python REPL.
 * Currently no support for executing tasks asynchronously. Perhaps I could use
   `β` to signify this since it looks kinda like an `&` but is a valid
   identifier.
+
+* Pipes break frequently. I think there's a bug somewhere in the code for
+  handling this but I don't know what.
+
+* Many programs don't work nicely because they think they're not running in a
+  terminal.
