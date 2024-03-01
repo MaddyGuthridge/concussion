@@ -1,9 +1,29 @@
 from abc import abstractmethod
 from copy import deepcopy
-from io import StringIO
 from typing import Optional, TextIO
 import subprocess
 import sys
+from threading import Thread
+
+
+def threaded_write_out(buf: TextIO, output_to: TextIO):
+    """
+    Write output from buffer to the given output in a separate thread, so that
+    we can do other work elsewhere.
+
+    I wish there was a nicer way to do this. I mean there probably is but idk
+    what it is
+    """
+    def do_write():
+        # Infinite loop until the buffer is closed, then we stop
+        try:
+            while True:
+                # Read buffer line-by-line. I can't think of a cleaner solution
+                output_to.write(buf.readline())
+        except ValueError:
+            pass
+
+    Thread(target=do_write).run()
 
 
 class Pysh:
@@ -11,12 +31,6 @@ class Pysh:
     Pysh command component
     """
     def __init__(self) -> None:
-        self._consumed = False
-        """
-        Whether this component has been consumed by being combined with another
-        component
-        """
-
         self._args: list[str] = []
         """
         List of arguments for the command. These are appended using the `+`
@@ -44,22 +58,14 @@ class Pysh:
         Clone the command.
         """
         new = deepcopy(self)
-        self._consumed = True
-        new._consumed = False
         return new
 
     def __repr__(self) -> str:
         """
-        Object representation. We use this to execute the command if needed.
+        Object representation. We use this to execute the command.
         """
-        # print("Repr called")
-        if self._consumed or len(self._args) == 0:
+        if len(self._args) == 0:
             return ""
-
-        if self._out_file:
-            output: TextIO = open(self._out_file, 'w')
-        else:
-            output = sys.stdout
 
         if self._in_file:
             overall_input: TextIO = open(self._in_file, 'r')
@@ -67,23 +73,27 @@ class Pysh:
             overall_input = sys.stdin
 
         if self._pipe_from:
-            # Piping from another command, send it our stdin instead, and give
-            # it a string buffer to write to which we can use for our input
-            our_input = StringIO()
-            self._pipe_from.exec(overall_input, our_input, sys.stderr)
+            stdout, stderr = self._pipe_from.exec(overall_input)
+            our_input = stdout
+            threaded_write_out(stderr, sys.stderr)
         else:
             our_input = overall_input
 
-        self.exec(our_input, output, sys.stderr)
+        stdout, stderr = self.exec(our_input)
+
+        threaded_write_out(stderr, sys.stderr)
+        if self._out_file:
+            threaded_write_out(stdout, open(self._out_file))
+        else:
+            threaded_write_out(stdout, sys.stdout)
 
         return_code = self.finish_exec()
         # TODO: Set environment variable with return code
-        # print(f"Program exited with code {return_code}")
 
         return ""
 
     @abstractmethod
-    def exec(self, stdin: TextIO, stdout: TextIO, stderr: TextIO) -> None:
+    def exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
         """
         Execute this command. Must be implemented in subclasses.
         """
@@ -152,12 +162,10 @@ class Pysh:
             new_cmd = PyshExecute()
             new_cmd._args.append(other)
             new_cmd._pipe_from = self
-            self._consumed = True
             return new_cmd
         elif isinstance(other, Pysh):
             new_cmd = other.clone()
             new_cmd._pipe_from = self
-            self._consumed = True
             return new_cmd
         else:
             raise TypeError("Give a str instead")
@@ -168,17 +176,20 @@ class PyshExecute(Pysh):
         super().__init__()
         self._process: Optional[subprocess.Popen] = None
 
-    def exec(self, stdin: TextIO, stdout: TextIO, stderr: TextIO) -> None:
-        if isinstance(stdout, StringIO):
-            # FIXME: I need a way to make these buffers work nicely if they
-            # don't have a fileno
-            self._process = subprocess.Popen(
-                self._args,
-                stdin=stdin,
-                stdout=stdout,
-                stderr=stderr,
-                text=True,
-            )
+    def exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
+        self._process = subprocess.Popen(
+            self._args,
+            stdin=stdin,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+
+        assert self._process.stdout is not None
+        assert self._process.stderr is not None
+
+        # The inheritance for buffers in python is so confusing
+        return self._process.stdout, self._process.stderr  # type: ignore
 
     def do_finish_exec(self) -> int:
         assert self._process is not None

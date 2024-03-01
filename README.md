@@ -31,5 +31,5 @@ It's kinda like Bash but it's actually Python, and it is horrific and will cause
 
 ## Unimplemented features
 
-* Currently all stdout goes directly to stdout, and it cannot be redirected.
-  Maybe I'll implement this at some point.
+* Currently all stderr goes directly to this process's stderr, and it cannot be
+  redirected. Maybe I'll implement this at some point.
