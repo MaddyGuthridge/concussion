@@ -14,7 +14,7 @@ class cd(ConcussionBuiltin):
     """
     change directory
     """
-    def run(self, stdin: TextIO) -> tuple[str, str]:
+    def run_builtin(self, stdin: TextIO) -> tuple[str, str]:
         if len(self._args) == 1:
             # cd with no args
             home = os.getenv("HOME")
@@ -30,7 +30,7 @@ class pwd(ConcussionBuiltin):
     """
     print working directory
     """
-    def run(self, stdin: TextIO) -> tuple[str, str]:
+    def run_builtin(self, stdin: TextIO) -> tuple[str, str]:
         return os.getcwd() + "\n", ""
 
 
@@ -41,7 +41,7 @@ class exit(ConcussionBuiltin):
     Whenever this is `repr`d it causes the process to exit, incidentally making
     this program really painful to debug.
     """
-    def run(self, stdin: TextIO) -> tuple[str, str]:
+    def run_builtin(self, stdin: TextIO) -> tuple[str, str]:
         if len(self._args) == 1:
             sys.exit()
         else:

@@ -234,12 +234,12 @@ class ConcussionBuiltin(ConcussionBase):
         self._exit_code = 0
 
     @abstractmethod
-    def run(self, stdin: TextIO) -> tuple[str, str]:
+    def run_builtin(self, stdin: TextIO) -> tuple[str, str]:
         """Run the command"""
 
     def do_exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
         try:
-            out, err = self.run(stdin)
+            out, err = self.run_builtin(stdin)
             return StringIO(out), StringIO(err)
         except Exception as e:
             self._exit_code = 1
@@ -250,8 +250,10 @@ class ConcussionBuiltin(ConcussionBase):
 
 
 class ConcussionExecutable(ConcussionBase):
-    def __init__(self) -> None:
+    def __init__(self, executable: Optional[str] = None) -> None:
         super().__init__()
+        if executable:
+            self._args.append(executable)
         self._process: Optional[subprocess.Popen] = None
 
     def do_exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
