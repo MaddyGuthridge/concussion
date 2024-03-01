@@ -60,6 +60,18 @@ hi
 >>> true and echo + "hi"
 ```
 
+You can also do file redirection like in Bash
+
+```py
+>>> echo + "hi" > "hi.txt"
+>>> cat < "hi.txt"
+hi
+>>> echo + "hi again" >> "hi.txt"  # append
+>>> cat < "hi.txt"
+hi
+hi again
+```
+
 Since there is no way to create a Python identifier for every possible
 executable that could be run, users can also type their own shell prompt:
 `Ṩ +`. Note that this isn't a dollar sign, but is rather a Latin capital

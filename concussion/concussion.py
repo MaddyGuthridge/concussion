@@ -61,6 +61,11 @@ class ConcussionBase:
         is unset if outputting to another command)
         """
 
+        self._out_append = False
+        """
+        Whether to append instead of write to the output file if applicable
+        """
+
         self._in_file: Optional[str] = None
         """
         File to read input from
@@ -99,7 +104,11 @@ class ConcussionBase:
         t_stderr = threaded_write_out(stderr, sys.stderr)
 
         if self._out_file:
-            t_stdout = threaded_write_out(stdout, open(self._out_file))
+            t_stdout = threaded_write_out(
+                stdout,
+                # Handle logic for appending
+                open(self._out_file, 'a' if self._out_append else 'w')
+            )
         else:
             t_stdout = threaded_write_out(stdout, sys.stdout)
 
@@ -191,6 +200,18 @@ class ConcussionBase:
         if isinstance(other, str):
             new_cmd = self.clone()
             new_cmd._out_file = other
+            return new_cmd
+        else:
+            raise TypeError("Expected a str or something")
+
+    def __rshift__(self, other: object) -> 'ConcussionBase':
+        """
+        Append to a file as output
+        """
+        if isinstance(other, str):
+            new_cmd = self.clone()
+            new_cmd._out_file = other
+            new_cmd._out_append = True
             return new_cmd
         else:
             raise TypeError("Expected a str or something")
