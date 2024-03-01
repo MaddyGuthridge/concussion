@@ -221,7 +221,7 @@ class ConcussionBase:
         Pipe this to another command
         """
         if isinstance(other, str):
-            new_cmd = ConcussionExecutable()
+            new_cmd: 'ConcussionBase' = ConcussionExecutable()
             new_cmd._args.append(other)
             new_cmd._pipe_from = self
             return new_cmd
