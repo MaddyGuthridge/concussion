@@ -10,6 +10,7 @@ from . import shell_builtins
 def main():
     locals: dict[str, ConcussionBase] = {
         "Ṩ": ConcussionExecutable(),
+        "S": ConcussionExecutable(),
     }
     # Add all the shell builtins
     for name in dir(shell_builtins):

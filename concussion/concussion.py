@@ -232,7 +232,7 @@ class ConcussionBuiltin(ConcussionBase):
             return StringIO(out), StringIO(err)
         except Exception as e:
             self._exit_code = 1
-            return StringIO(), StringIO(str(e))
+            return StringIO(), StringIO(str(e) + "\n")
 
     def do_finish_exec(self) -> int:
         return self._exit_code
@@ -244,13 +244,19 @@ class ConcussionExecutable(ConcussionBase):
         self._process: Optional[subprocess.Popen] = None
 
     def do_exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
-        self._process = subprocess.Popen(
-            self._args,
-            stdin=stdin,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
+        try:
+            self._process = subprocess.Popen(
+                self._args,
+                stdin=stdin,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+            )
+        except FileNotFoundError:
+            return (
+                StringIO(),
+                StringIO(f"{self._args[0]}: command not found\n")
+            )
 
         assert self._process.stdout is not None
         assert self._process.stderr is not None
@@ -259,5 +265,6 @@ class ConcussionExecutable(ConcussionBase):
         return self._process.stdout, self._process.stderr  # type: ignore
 
     def do_finish_exec(self) -> int:
-        assert self._process is not None
+        if self._process is None:
+            return 1
         return self._process.wait()
