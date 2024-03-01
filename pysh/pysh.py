@@ -1,12 +1,13 @@
 from abc import abstractmethod
 from copy import deepcopy
-from typing import Optional, TextIO
+from typing import Optional, TextIO, cast
 import subprocess
 import sys
-from threading import Thread
+from .stoppable_thread import StoppableThread
+from threading import current_thread
 
 
-def threaded_write_out(buf: TextIO, output_to: TextIO):
+def threaded_write_out(buf: TextIO, output_to: TextIO) -> StoppableThread:
     """
     Write output from buffer to the given output in a separate thread, so that
     we can do other work elsewhere.
@@ -15,15 +16,24 @@ def threaded_write_out(buf: TextIO, output_to: TextIO):
     what it is
     """
     def do_write():
+        t = cast(StoppableThread, current_thread())
+        # print(f"Thread buffer start: {buf} -> {output_to}")
         # Infinite loop until the buffer is closed, then we stop
         try:
-            while True:
+            while not t.stopped():
                 # Read buffer line-by-line. I can't think of a cleaner solution
                 output_to.write(buf.readline())
         except ValueError:
-            pass
+            # Close the output buffer
+            output_to.close()
+            # print(f"Thread buffer end: {buf} -> {output_to}")
 
-    Thread(target=do_write).run()
+    # The threads don't seem to be dying properly, so let's at least make sure
+    # they don't prevent us from exiting
+    t = StoppableThread(target=do_write, daemon=True)
+    t.start()
+
+    return t
 
 
 class Pysh:
@@ -53,6 +63,8 @@ class Pysh:
         File to read input from
         """
 
+        self._stderr_thread: Optional[StoppableThread] = None
+
     def clone(self) -> 'Pysh':
         """
         Clone the command.
@@ -72,28 +84,36 @@ class Pysh:
         else:
             overall_input = sys.stdin
 
-        if self._pipe_from:
-            stdout, stderr = self._pipe_from.exec(overall_input)
-            our_input = stdout
-            threaded_write_out(stderr, sys.stderr)
-        else:
-            our_input = overall_input
+        stdout, stderr = self.exec(overall_input)
 
-        stdout, stderr = self.exec(our_input)
+        t_stderr = threaded_write_out(stderr, sys.stderr)
 
-        threaded_write_out(stderr, sys.stderr)
         if self._out_file:
-            threaded_write_out(stdout, open(self._out_file))
+            t_stdout = threaded_write_out(stdout, open(self._out_file))
         else:
-            threaded_write_out(stdout, sys.stdout)
+            t_stdout = threaded_write_out(stdout, sys.stdout)
 
         return_code = self.finish_exec()
         # TODO: Set environment variable with return code
 
+        # Kill all our threads
+        t_stderr.stop()
+        t_stdout.stop()
+
         return ""
 
-    @abstractmethod
     def exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
+        if self._pipe_from:
+            stdout, stderr = self._pipe_from.exec(stdin)
+            our_input = stdout
+            self._stderr_thread = threaded_write_out(stderr, sys.stderr)
+        else:
+            our_input = stdin
+
+        return self.do_exec(our_input)
+
+    @abstractmethod
+    def do_exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
         """
         Execute this command. Must be implemented in subclasses.
         """
@@ -106,6 +126,8 @@ class Pysh:
         """
         if self._pipe_from:
             self._pipe_from.finish_exec()
+        if self._stderr_thread:
+            self._stderr_thread.stop()
         return self.do_finish_exec()
 
     @abstractmethod
@@ -124,6 +146,13 @@ class Pysh:
         if isinstance(other, str):
             new_cmd = self.clone()
             new_cmd._args.append(other)
+            return new_cmd
+        elif isinstance(other, (list, tuple)):
+            for i in other:
+                if not isinstance(i, str):
+                    raise TypeError("Each element of iterable must be str")
+            new_cmd = self.clone()
+            new_cmd._args.extend(other)
             return new_cmd
         else:
             # TODO: Error handling and reporting
@@ -163,6 +192,14 @@ class Pysh:
             new_cmd._args.append(other)
             new_cmd._pipe_from = self
             return new_cmd
+        if isinstance(other, (list, tuple)):
+            for i in other:
+                if not isinstance(i, str):
+                    raise TypeError("Each element of iterable must be str")
+            new_cmd = PyshExecute()
+            new_cmd._args.extend(other)
+            new_cmd._pipe_from = self
+            return new_cmd
         elif isinstance(other, Pysh):
             new_cmd = other.clone()
             new_cmd._pipe_from = self
@@ -176,7 +213,7 @@ class PyshExecute(Pysh):
         super().__init__()
         self._process: Optional[subprocess.Popen] = None
 
-    def exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
+    def do_exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
         self._process = subprocess.Popen(
             self._args,
             stdin=stdin,
