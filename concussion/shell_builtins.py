@@ -37,6 +37,9 @@ class pwd(ConcussionBuiltin):
 class exit(ConcussionBuiltin):
     """
     exit the shell
+
+    Whenever this is `repr`d it causes the process to exit, incidentally making
+    this program really painful to debug.
     """
     def run(self, stdin: TextIO) -> tuple[str, str]:
         if len(self._args) == 1:
