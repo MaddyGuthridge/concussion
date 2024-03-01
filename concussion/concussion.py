@@ -79,8 +79,15 @@ class ConcussionBase:
         """
         Object representation. We use this to execute the command.
         """
+        self.run()
+        return ""
+
+    def run(self) -> int:
+        """
+        Run the command and return its exit code
+        """
         if len(self._args) == 0:
-            return ""
+            return 0
 
         if self._in_file:
             overall_input: TextIO = open(self._in_file, 'r')
@@ -105,7 +112,7 @@ class ConcussionBase:
         t_stderr.stop()
         t_stdout.stop()
 
-        return ""
+        return return_code
 
     def exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
         if self._pipe_from:
@@ -211,6 +218,10 @@ class ConcussionBase:
             return new_cmd
         else:
             raise TypeError("Give a str instead")
+
+    def __bool__(self) -> bool:
+        """Get the status of the command"""
+        return bool(self.run())
 
 
 class ConcussionBuiltin(ConcussionBase):

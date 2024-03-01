@@ -82,7 +82,16 @@ Concussion shell...
 ```
 
 Because `&&` and `||` are not supported in Python, use the `and` and `or`
-keywords instead. (not implemented yet)
+keywords instead.
+
+```py
+>>> S + "false" or S + "echo" + "hi"
+>>> S + "false" and S + "echo" + "hi"
+hi
+>>> S + "true" or S + "echo" + "hi"
+hi
+>>> S + "true" and S + "echo" + "hi"
+```
 
 ## Unimplemented features
 
