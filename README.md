@@ -31,14 +31,14 @@ Concussion uses the `+` operator to join arguments for a command.
 hello world
 ```
 
-Notice that none of these variables were ever defined. Concussion uses a custom
+Notice that none of these variables were never defined. Concussion uses a custom
 dictionary for the local variable scope such that any undefined variables
 create a new string-like object, which helps to improve readability.
 
 You can pipe commands using the standard `|` pipe operator.
 
 ```py
->>> ls + "-l" | less
+>>> ls + -l | less
 # less is broken because I can't be bothered to make my shell look like a TTY
 # so the output is incorrect
 ```

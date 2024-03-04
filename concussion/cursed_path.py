@@ -93,5 +93,8 @@ class CursedPath:
     def __rsub__(self, other: CursedPathJoinable) -> 'CursedPath':
         return CursedPath(other) - self
 
+    def __neg__(self) -> 'CursedPath':
+        return CursedPath('-' + str(self))
+
     def __getattr__(self, name: str) -> 'CursedPath':
         return self.__handle_join(name, '.')

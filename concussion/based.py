@@ -223,9 +223,9 @@ class ConcussionBase:
         """
         Add an argument to the command.
         """
-        if isinstance(other, (str, CursedPath)):
+        if isinstance(other, (CursedPath, str, int, float)):
             new_cmd = self._clone()
-            new_cmd._args.append(CursedPath(other))
+            new_cmd._args.append(CursedPath(str(other)))
             return new_cmd
         elif isinstance(other, ConcussionBase):
             new_cmd = self._clone()
@@ -241,55 +241,6 @@ class ConcussionBase:
             # executed, perhaps by storing a collection of error messages then
             # printing them instead of executing the command.
             raise TypeError("Expected a str or something")
-
-    def __truediv__(
-        self,
-        other: CursedPathJoinable | 'ConcussionBase',
-    ) -> 'ConcussionBase':
-        new_cmd = self._clone()
-        # Modify the last item in the args
-        if isinstance(other, ConcussionBase):
-            new_cmd._args[-1] = new_cmd._args[-1] / other._args[0]
-        else:
-            new_cmd._args[-1] = new_cmd._args[-1] / other
-
-        return new_cmd
-
-    def __rtruediv__(
-        self,
-        other: CursedPathJoinable | 'ConcussionBase',
-    ) -> 'ConcussionBase':
-        new_cmd = self._clone()
-        # Modify the first item in the args
-        if isinstance(other, ConcussionBase):
-            new_cmd._args[0] = other._args[0] / new_cmd._args[0]
-        else:
-            new_cmd._args[0] = other / new_cmd._args[0]
-        return new_cmd
-
-    def __sub__(
-        self,
-        other: CursedPathJoinable | 'ConcussionBase',
-    ) -> 'ConcussionBase':
-        new_cmd = self._clone()
-        # Modify the last item in the args
-        if isinstance(other, ConcussionBase):
-            new_cmd._args[-1] = new_cmd._args[-1] - other._args[0]
-        else:
-            new_cmd._args[-1] = new_cmd._args[-1] - other
-        return new_cmd
-
-    def __rsub__(
-        self,
-        other: CursedPathJoinable | 'ConcussionBase',
-    ) -> 'ConcussionBase':
-        new_cmd = self._clone()
-        # Modify the first item in the args
-        if isinstance(other, ConcussionBase):
-            new_cmd._args[0] = other._args[0] - new_cmd._args[0]
-        else:
-            new_cmd._args[0] = other - new_cmd._args[0]
-        return new_cmd
 
     def __getattr__(self, name: str) -> 'ConcussionBase':
         new_cmd = self._clone()
@@ -354,6 +305,61 @@ class ConcussionBase:
     def __bool__(self) -> bool:
         """Get the status of the command"""
         return bool(self.run())
+
+    def __truediv__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the last item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[-1] = new_cmd._args[-1] / other._args[0]
+        else:
+            new_cmd._args[-1] = new_cmd._args[-1] / other
+
+        return new_cmd
+
+    def __rtruediv__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the first item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[0] = other._args[0] / new_cmd._args[0]
+        else:
+            new_cmd._args[0] = other / new_cmd._args[0]
+        return new_cmd
+
+    def __sub__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the last item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[-1] = new_cmd._args[-1] - other._args[0]
+        else:
+            new_cmd._args[-1] = new_cmd._args[-1] - other
+        return new_cmd
+
+    def __rsub__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the first item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[0] = other._args[0] - new_cmd._args[0]
+        else:
+            new_cmd._args[0] = other - new_cmd._args[0]
+        return new_cmd
+
+    def __neg__(self) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the first arg
+        new_cmd._args[0] = -new_cmd._args[0]
+        return new_cmd
 
 
 class ConcussionBuiltin(ConcussionBase):
