@@ -26,6 +26,8 @@ def threaded_write_out(buf: TextIO, output_to: TextIO) -> StoppableThread:
             while not t.stopped():
                 # Read buffer line-by-line. I can't think of a cleaner solution
                 output_to.write(buf.readline())
+            # Read the last of the buffer
+            output_to.write(buf.read())
         except ValueError:
             # Close the output buffer
             output_to.close()
