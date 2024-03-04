@@ -1,5 +1,9 @@
 """
-State of the shell
+# Concussion / shell state
+
+State of the Concussion shell. Contains the dictionary of local variables used
+by the REPL. Modifications to these locals are passed through to the REPL,
+allowing for programmatic modification of the REPL environment.
 """
 import os
 from pathlib import Path

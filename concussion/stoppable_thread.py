@@ -1,4 +1,5 @@
 """
+# Concussion / stoppable thread
 A thread that can be stopped
 """
 import threading

@@ -1,3 +1,8 @@
+"""
+# Concussion / base
+
+Base class for Concussion commands
+"""
 from abc import abstractmethod
 from copy import deepcopy
 from io import StringIO

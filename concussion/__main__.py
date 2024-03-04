@@ -1,13 +1,9 @@
 """
-Main program, responsible for setting up the environment and
+# Concussion / main
+
+Entrypoint to concussion repl
 """
-import code
-
-from .shell_state import shell_locals
-
-
-def main():
-    code.interact(local=shell_locals)
+from concussion.repl import main
 
 
 if __name__ == '__main__':

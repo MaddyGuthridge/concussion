@@ -1,5 +1,7 @@
 """
-shell builtin functions
+# Concussion / shell builtins
+
+Shell builtin functions
 """
 import os
 import sys
