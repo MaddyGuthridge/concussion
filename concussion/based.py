@@ -87,6 +87,36 @@ class ConcussionBase:
         new = deepcopy(self)
         return new
 
+    def __str__(self) -> str:
+        """
+        Stringify - we use this to display debug info about the command
+        """
+        # Print it rather than returning it so we get better formatting
+        # (yuck)
+        print(self.debug())
+        return ""
+
+    def debug(self) -> str:
+        """
+        Debug representation
+        """
+        out = []
+        out.append(f"command: {self._args}")
+        if self._in_file:
+            out.append(f" -> input file: {self._in_file}")
+        if self._out_file:
+            out.append(
+                f" -> input file: {self._out_file} "
+                f"{'(appending)' if self._out_append else ''}"
+            )
+        # Evaluating this as a bool executes the command, so we need to
+        # explicitly check for None
+        if self._pipe_from is not None:
+            out.append(" -> input piped from other command:")
+            out.append(self._pipe_from.debug())
+
+        return "\n".join(out)
+
     def __repr__(self) -> str:
         """
         Object representation. We use this to execute the command.
@@ -94,10 +124,12 @@ class ConcussionBase:
         self.run()
         return ""
 
-    def run(self) -> int:
+    def run(self, debug: bool = False) -> int:
         """
         Run the command and return its exit code
         """
+        if debug:
+            print(f"!!! Executing {self.debug()}")
         if len(self._args) == 0:
             return 0
 
@@ -130,12 +162,25 @@ class ConcussionBase:
 
         return return_code
 
-    def exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
-        if self._pipe_from:
+    def exec(
+        self,
+        stdin: TextIO,
+        debug: bool = False,
+    ) -> tuple[TextIO, TextIO]:
+        # Evaluating this as a bool executes the command, so we need to
+        # explicitly check for None
+        if self._pipe_from is not None:
+            if debug:
+                print(
+                    f"!!! {self._args[0]} receives pipe from "
+                    f"{self._pipe_from._args[0]}"
+                )
             stdout, stderr = self._pipe_from.exec(stdin)
             our_input = stdout
             self._stderr_thread = threaded_write_out(stderr, sys.stderr)
         else:
+            if debug:
+                print(f"!!! {self._args[0]} receives stdin")
             our_input = stdin
 
         return self.do_exec(our_input)
@@ -152,7 +197,7 @@ class ConcussionBase:
 
         This part handles calling the function in programs we piped from
         """
-        if self._pipe_from:
+        if self._pipe_from is not None:
             self._pipe_from.finish_exec()
         if self._stderr_thread:
             self._stderr_thread.stop()
