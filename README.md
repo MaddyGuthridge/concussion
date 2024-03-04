@@ -95,6 +95,15 @@ before the leading `/`, since a leading `/` in Python produces a `SyntaxError`.
 # [epic train ASCII art]
 ```
 
+## Setting concussion as your default shell
+
+This will almost definitely break your system.
+
+```sh
+$ sudo chsh --shell $(which concussion)
+...
+```
+
 ## Known issues
 
 * Currently all stderr goes directly to this process's stderr, and it cannot be
