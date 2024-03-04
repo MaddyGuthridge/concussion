@@ -5,37 +5,20 @@ State of the Concussion shell. Contains the dictionary of local variables used
 by the REPL. Modifications to these locals are passed through to the REPL,
 allowing for programmatic modification of the REPL environment.
 """
-import os
-from pathlib import Path
-from concussion import ConcussionBase, ConcussionExecutable, ConcussionBuiltin
+from concussion import ConcussionBuiltin
 from . import shell_builtins
+from .fs_locals import FsLocals
 
 
-shell_locals: dict[str, ConcussionBase] = {
-    "Ṩ": ConcussionExecutable(),
-    "S": ConcussionExecutable(),
-}
+shell_locals = FsLocals()
 """
 Local variables for shell
 """
 
 
-def add_locals_from_path():
-    """Add all the programs on the path"""
-    programs = {}
-    for directory in reversed(os.environ.get("PATH", "").split(":")):
-        if not Path(directory).is_dir():
-            continue
-        for file in Path(directory).iterdir():
-            # If it's an executable
-            if os.access(file, os.X_OK):
-                programs[file.name] = ConcussionExecutable(file.name)
-    # Now add them all to locals
-    shell_locals.update(programs)
-
-
 def add_shell_builtins():
-    """Add shell builtin commands"""
+    """Build dict of shell builtin commands"""
+    builtins = {}
     for name in dir(shell_builtins):
         object = getattr(shell_builtins, name)
         if (
@@ -43,8 +26,9 @@ def add_shell_builtins():
             and issubclass(object, ConcussionBuiltin)
             and object is not ConcussionBuiltin
         ):
-            shell_locals[name] = object()
+            builtins[name] = object()
+
+    return builtins
 
 
-add_locals_from_path()
-add_shell_builtins()
+shell_locals |= add_shell_builtins()

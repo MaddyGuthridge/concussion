@@ -23,7 +23,7 @@ class cd(ConcussionBuiltin):
             assert home is not None
             os.chdir(home)
         else:
-            os.chdir(self._args[1])
+            os.chdir(str(self._args[1]))
 
         return "", ""
 
@@ -47,4 +47,4 @@ class exit(ConcussionBuiltin):
         if len(self._args) == 1:
             sys.exit()
         else:
-            sys.exit(int(self._args[1]))
+            sys.exit(int(str(self._args[1])))

@@ -4,7 +4,6 @@
 Base class for Concussion commands
 """
 from abc import abstractmethod
-from copy import deepcopy
 from io import StringIO
 from typing import Optional, TextIO, cast
 import subprocess
@@ -12,6 +11,7 @@ import sys
 import os
 from threading import current_thread
 
+from concussion.cursed_path import CursedPath, CursedPathJoinable
 from concussion.stoppable_thread import StoppableThread
 
 
@@ -50,19 +50,22 @@ class ConcussionBase:
     """
     Concussion command - abstract base class
     """
-    def __init__(self) -> None:
-        self._args: list[str] = []
-        """
-        List of arguments for the command. These are appended using the `+`
-        operator.
-        """
+    def __init__(self, first_arg: str | CursedPath | None = None) -> None:
+        if first_arg is None:
+            self._args: list[CursedPath] = []
+            """
+            List of arguments for the command. These are appended using the `+`
+            operator.
+            """
+        else:
+            self._args = [CursedPath(first_arg)]
 
         self._pipe_from: Optional['ConcussionBase'] = None
         """
         Command to pipe input from
         """
 
-        self._out_file: Optional[str] = None
+        self._out_file: Optional[CursedPathJoinable] = None
         """
         File to write output to (note this is only used for final outputs, and
         is unset if outputting to another command)
@@ -73,28 +76,31 @@ class ConcussionBase:
         Whether to append instead of write to the output file if applicable
         """
 
-        self._in_file: Optional[str] = None
+        self._in_file: Optional[CursedPathJoinable] = None
         """
         File to read input from
         """
 
         self._stderr_thread: Optional[StoppableThread] = None
 
-    def clone(self) -> 'ConcussionBase':
+    def _clone(self) -> 'ConcussionBase':
         """
         Clone the command.
         """
-        new = deepcopy(self)
+        new = self.__class__()
+        new._args = list(self._args)
+        new._pipe_from = self._pipe_from
+        new._out_file = self._out_file
+        new._out_append = self._out_append
+        new._in_file = self._in_file
+        new._stderr_thread = None
         return new
 
     def __str__(self) -> str:
         """
         Stringify - we use this to display debug info about the command
         """
-        # Print it rather than returning it so we get better formatting
-        # (yuck)
-        print(self.debug())
-        return ""
+        return str(self._args)
 
     def debug(self) -> str:
         """
@@ -134,7 +140,7 @@ class ConcussionBase:
             return 0
 
         if self._in_file:
-            overall_input: TextIO = open(self._in_file, 'r')
+            overall_input: TextIO = open(str(self._in_file), 'r')
         else:
             overall_input = sys.stdin
 
@@ -146,7 +152,7 @@ class ConcussionBase:
             t_stdout = threaded_write_out(
                 stdout,
                 # Handle logic for appending
-                open(self._out_file, 'a' if self._out_append else 'w')
+                open(str(self._out_file), 'a' if self._out_append else 'w')
             )
         else:
             t_stdout = threaded_write_out(stdout, sys.stdout)
@@ -190,6 +196,7 @@ class ConcussionBase:
         """
         Execute this command. Must be implemented in subclasses.
         """
+        raise NotImplementedError()
 
     def finish_exec(self) -> int:
         """
@@ -216,16 +223,17 @@ class ConcussionBase:
         """
         Add an argument to the command.
         """
-        if isinstance(other, str):
-            new_cmd = self.clone()
-            new_cmd._args.append(other)
+        if isinstance(other, (str, CursedPath)):
+            new_cmd = self._clone()
+            new_cmd._args.append(CursedPath(other))
+            return new_cmd
+        elif isinstance(other, ConcussionBase):
+            new_cmd = self._clone()
+            new_cmd._args.extend(other._args)
             return new_cmd
         elif isinstance(other, (list, tuple)):
-            for i in other:
-                if not isinstance(i, str):
-                    raise TypeError("Each element of iterable must be str")
-            new_cmd = self.clone()
-            new_cmd._args.extend(other)
+            new_cmd = self._clone()
+            new_cmd._args.extend([CursedPath(i) for i in other])
             return new_cmd
         else:
             # TODO: Error handling and reporting
@@ -234,12 +242,66 @@ class ConcussionBase:
             # printing them instead of executing the command.
             raise TypeError("Expected a str or something")
 
-    def __lt__(self, other: object) -> 'ConcussionBase':
+    def __truediv__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the last item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[-1] = new_cmd._args[-1] / other._args[0]
+        else:
+            new_cmd._args[-1] = new_cmd._args[-1] / other
+
+        return new_cmd
+
+    def __rtruediv__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the first item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[0] = other._args[0] / new_cmd._args[0]
+        else:
+            new_cmd._args[0] = other / new_cmd._args[0]
+        return new_cmd
+
+    def __sub__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the last item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[-1] = new_cmd._args[-1] - other._args[0]
+        else:
+            new_cmd._args[-1] = new_cmd._args[-1] - other
+        return new_cmd
+
+    def __rsub__(
+        self,
+        other: CursedPathJoinable | 'ConcussionBase',
+    ) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        # Modify the first item in the args
+        if isinstance(other, ConcussionBase):
+            new_cmd._args[0] = other._args[0] - new_cmd._args[0]
+        else:
+            new_cmd._args[0] = other - new_cmd._args[0]
+        return new_cmd
+
+    def __getattr__(self, name: str) -> 'ConcussionBase':
+        new_cmd = self._clone()
+        new_cmd._args[-1] = getattr(new_cmd._args[-1], name)
+        return new_cmd
+
+    def __lt__(self, other: CursedPathJoinable) -> 'ConcussionBase':
         """
         Add a file as input
         """
         if isinstance(other, str):
-            new_cmd = self.clone()
+            new_cmd = self._clone()
             new_cmd._in_file = other
             return new_cmd
         else:
@@ -250,7 +312,7 @@ class ConcussionBase:
         Add a file as output
         """
         if isinstance(other, str):
-            new_cmd = self.clone()
+            new_cmd = self._clone()
             new_cmd._out_file = other
             return new_cmd
         else:
@@ -261,7 +323,7 @@ class ConcussionBase:
         Append to a file as output
         """
         if isinstance(other, str):
-            new_cmd = self.clone()
+            new_cmd = self._clone()
             new_cmd._out_file = other
             new_cmd._out_append = True
             return new_cmd
@@ -272,21 +334,18 @@ class ConcussionBase:
         """
         Pipe this to another command
         """
-        if isinstance(other, str):
+        if isinstance(other, (str, CursedPath)):
             new_cmd: 'ConcussionBase' = ConcussionExecutable()
-            new_cmd._args.append(other)
+            new_cmd._args.append(CursedPath(other))
             new_cmd._pipe_from = self
             return new_cmd
         if isinstance(other, (list, tuple)):
-            for i in other:
-                if not isinstance(i, str):
-                    raise TypeError("Each element of iterable must be str")
             new_cmd = ConcussionExecutable()
-            new_cmd._args.extend(other)
+            new_cmd._args.extend([CursedPath(o) for o in other])
             new_cmd._pipe_from = self
             return new_cmd
         elif isinstance(other, ConcussionBase):
-            new_cmd = other.clone()
+            new_cmd = other._clone()
             new_cmd._pipe_from = self
             return new_cmd
         else:
@@ -303,7 +362,7 @@ class ConcussionBuiltin(ConcussionBase):
     """
     def __init__(self) -> None:
         super().__init__()
-        self._args.append(self.__class__.__name__)
+        self._args.append(CursedPath(self.__class__.__name__))
         self._exit_code = 0
 
     @abstractmethod
@@ -325,14 +384,14 @@ class ConcussionBuiltin(ConcussionBase):
 class ConcussionExecutable(ConcussionBase):
     def __init__(self, executable: Optional[str] = None) -> None:
         super().__init__()
-        if executable:
-            self._args.append(executable)
+        if executable is not None:
+            self._args.append(CursedPath(executable))
         self._process: Optional[subprocess.Popen] = None
 
     def do_exec(self, stdin: TextIO) -> tuple[TextIO, TextIO]:
         try:
             self._process = subprocess.Popen(
-                self._args,
+                [str(a) for a in self._args],
                 stdin=stdin,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,

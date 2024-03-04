@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "concussion"
-version = "0.1.0"
+version = "0.2.0"
 description = "It's kinda like Bash except it causes severe brain damage because it's actually a Python REPL."
 authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
 license = "MIT"
@@ -16,6 +16,9 @@ concussion = "concussion.__main__:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.1.0"
 
 [build-system]
 requires = ["poetry-core"]
