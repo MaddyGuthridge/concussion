@@ -12,5 +12,5 @@ __all__ = [
     "main",
 ]
 
-from .base import ConcussionBase, ConcussionExecutable, ConcussionBuiltin
+from .based import ConcussionBase, ConcussionExecutable, ConcussionBuiltin
 from .repl import main

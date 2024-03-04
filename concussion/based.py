@@ -1,5 +1,5 @@
 """
-# Concussion / base
+# Concussion / based
 
 Base class for Concussion commands
 """
