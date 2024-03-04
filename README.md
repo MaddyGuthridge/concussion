@@ -8,7 +8,7 @@ a Python REPL.
 ```txt
 $ pip install concussion
 $ concussion
->>> cat + "README.md" | head + "-n" + "5"
+>>> cat + README.md | head + "-n" + "5"
 # Concussion Shell
 
 It's kinda like Bash except it causes severe brain damage because it's actually
@@ -27,9 +27,13 @@ Python doesn't support building commands from adjacent identifiers, so
 Concussion uses the `+` operator to join arguments for a command.
 
 ```py
->>> echo + "hello" + "world"
+>>> echo + hello + world
 hello world
 ```
+
+Notice that none of these variables were ever defined. Concussion uses a custom
+dictionary for the local variable scope such that any undefined variables
+create a new string-like object, which helps to improve readability.
 
 You can pipe commands using the standard `|` pipe operator.
 
@@ -52,48 +56,43 @@ Because `&&` and `||` are not supported in Python, use the `and` and `or`
 keywords instead.
 
 ```py
->>> false or echo + "hi"
->>> false and echo + "hi"
+>>> false or echo + hi
+>>> false and echo + hi
 hi
->>> true or echo + "hi"
+>>> true or echo + hi
 hi
->>> true and echo + "hi"
+>>> true and echo + hi
 ```
 
 You can also do file redirection like in Bash
 
 ```py
->>> echo + "hi" > "hi.txt"
->>> cat < "hi.txt"
+>>> echo + hi > hi.txt
+>>> cat < hi.txt
 hi
->>> echo + "hi again" >> "hi.txt"  # append
->>> cat < "hi.txt"
+>>> echo + "hi again" >> hi.txt  # append
+>>> cat < hi.txt
 hi
 hi again
 ```
 
-Since there is no way to create a Python identifier for every possible
-executable that could be run, users can also type their own shell prompt:
-`Ṩ +`. Note that this isn't a dollar sign, but is rather a Latin capital
-letter S with dot below and dot above (`U+1E68`), since that is the closest
-valid Python identifier I could get to the traditional `$` dollar sign. Since
-`Ṩ` is difficult to type, `S` is also available as a substitute.
+Because working with regular strings or `pathlib`'s `Path` objects is tedious
+in a shell-like environment, Concussion provides its own `CursedPath` object,
+which simplifies many aspects of string manipulation.
 
 ```py
->>> Ṩ + "uname"
-Linux
+>>> str(path/to/some-file.txt)
+"['path/to/some-file.txt']"
 ```
 
-Because of Python's order of operations, you need to group arguments for
-commands within a `tuple` or `list` for everything after the first command
-in a pipeline if the first argument isn't a variable.
+Note that the `/`, `-` and `.` operators all result in string joining.
+
+in order to path to files from the root of the file system, a `_` can be used
+before the leading `/`, since a leading `/` in Python produces a `SyntaxError`.
 
 ```py
->>> cat + "README.md" | ("head", "-n", "5")
-# Concussion Shell
-
-It's kinda like Bash except it causes severe brain damage because it's actually
-a Python REPL.
+>>> _/usr/bin/sl
+# [epic train ASCII art]
 ```
 
 ## Known issues
@@ -104,9 +103,6 @@ a Python REPL.
 * Currently no support for executing tasks asynchronously. Perhaps I could use
   `β` to signify this since it looks kinda like an `&` but is a valid
   identifier.
-
-* Pipes break frequently. I think there's a bug somewhere in the code for
-  handling this but I don't know what.
 
 * Many programs don't work nicely because they think they're not running in a
   terminal.

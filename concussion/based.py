@@ -102,6 +102,13 @@ class ConcussionBase:
         """
         return str(self._args)
 
+    def __repr__(self) -> str:
+        """
+        Object representation. We use this to execute the command.
+        """
+        self.run()
+        return ""
+
     def debug(self) -> str:
         """
         Debug representation
@@ -122,13 +129,6 @@ class ConcussionBase:
             out.append(self._pipe_from.debug())
 
         return "\n".join(out)
-
-    def __repr__(self) -> str:
-        """
-        Object representation. We use this to execute the command.
-        """
-        self.run()
-        return ""
 
     def run(self, debug: bool = False) -> int:
         """
