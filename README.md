@@ -8,7 +8,7 @@ a Python REPL.
 ```txt
 $ pip install concussion
 $ concussion
->>> cat + README.md | head + "-n" + "5"
+>>> cat + README.md | head + -n + 4
 # Concussion Shell
 
 It's kinda like Bash except it causes severe brain damage because it's actually
