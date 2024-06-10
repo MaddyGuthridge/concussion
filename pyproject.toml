@@ -2,14 +2,21 @@
 name = "concussion"
 version = "0.2.0"
 description = "It's kinda like Bash except it causes severe brain damage because it's actually a Python REPL."
-authors = ["Miguel Guthridge <hello@miguelguthridge.com>"]
+authors = ["Maddy Guthridge <hello@maddyguthridge.com>"]
 license = "MIT"
 readme = "README.md"
+
+repository = "https://github.com/MaddyGuthridge/withwait"
+documentation = "https://maddyguthridge.github.io/withwait"
 
 include = ["py.typed"]
 packages = [
     { include = "concussion" }
 ]
+
+[tool.poetry.urls]
+"Online Documentation" = "https://github.com/MaddyGuthridge/withwait"
+"Bug Tracker" = "https://github.com/MaddyGuthridge/withwait/issues"
 
 [tool.poetry.scripts]
 concussion = "concussion.__main__:main"
