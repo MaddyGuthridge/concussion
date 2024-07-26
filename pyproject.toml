@@ -6,8 +6,7 @@ authors = ["Maddy Guthridge <hello@maddyguthridge.com>"]
 license = "MIT"
 readme = "README.md"
 
-repository = "https://github.com/MaddyGuthridge/withwait"
-documentation = "https://maddyguthridge.github.io/withwait"
+repository = "https://github.com/MaddyGuthridge/concussion"
 
 include = ["py.typed"]
 packages = [
@@ -15,8 +14,8 @@ packages = [
 ]
 
 [tool.poetry.urls]
-"Online Documentation" = "https://github.com/MaddyGuthridge/withwait"
-"Bug Tracker" = "https://github.com/MaddyGuthridge/withwait/issues"
+"Online Documentation" = "https://github.com/MaddyGuthridge/concussion"
+"Bug Tracker" = "https://github.com/MaddyGuthridge/concussion/issues"
 
 [tool.poetry.scripts]
 concussion = "concussion.__main__:main"

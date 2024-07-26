@@ -50,6 +50,7 @@ class ConcussionBase:
     """
     Concussion command - abstract base class
     """
+
     def __init__(self, first_arg: str | CursedPath | None = None) -> None:
         if first_arg is None:
             self._args: list[CursedPath] = []
@@ -366,6 +367,7 @@ class ConcussionBuiltin(ConcussionBase):
     """
     Builtin shell function
     """
+
     def __init__(self) -> None:
         super().__init__()
         self._args.append(CursedPath(self.__class__.__name__))
