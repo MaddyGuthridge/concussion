@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "concussion"
-version = "0.2.1"
+version = "0.2.2"
 description = "It's kinda like Bash except it causes severe brain damage because it's actually a Python REPL."
 authors = ["Maddy Guthridge <hello@maddyguthridge.com>"]
 license = "MIT"
