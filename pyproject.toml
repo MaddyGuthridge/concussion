@@ -1,31 +1,34 @@
-[tool.poetry]
+[project]
 name = "concussion"
 version = "0.2.2"
 description = "It's kinda like Bash except it causes severe brain damage because it's actually a Python REPL."
-authors = ["Maddy Guthridge <hello@maddyguthridge.com>"]
-license = "MIT"
-readme = "README.md"
-
-repository = "https://github.com/MaddyGuthridge/concussion"
-
-include = ["py.typed"]
-packages = [
-    { include = "concussion" }
+authors = [
+    {name = "Maddy Guthridge", email = "hello@maddyguthridge.com"},
 ]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
 
-[tool.poetry.urls]
+[project.urls]
 "Online Documentation" = "https://github.com/MaddyGuthridge/concussion"
 "Bug Tracker" = "https://github.com/MaddyGuthridge/concussion/issues"
 
-[tool.poetry.scripts]
+[project.scripts]
 concussion = "concussion.__main__:main"
 
-[tool.poetry.dependencies]
-python = "^3.11"
+[dependency-groups]
+dev = ["pytest>=8.1.0"]
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.1.0"
+[tool.uv]
+# Exclude dependency releases newer than 1 week, in order to reduce supply-chain
+# risk.
+exclude-newer = "1 week"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.9.5,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "concussion"
+module-root = ""
