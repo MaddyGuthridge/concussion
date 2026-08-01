@@ -20,7 +20,7 @@ jobs:
           # Intentionally disabled to prevent poisoning
           enable-cache: false
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           # Pinned Python version
           python-version-file: ".python-version"
